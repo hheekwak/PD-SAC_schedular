@@ -1,0 +1,28 @@
+function [mk_set] = getmk_in_cn(taskset, cn_st, sumC)
+    % GETMK_IN_CN calculate lanient range of (m, k) for each task 
+    %               in a chain as a single chain
+    %   INPUTS: One taskset: taskset
+    %           chain structure that shows task order in the chain: cn_st
+    %           sum of execution time of the chain: sumC_cn
+
+    %ii_ltc = NaN(length(cn_st),1);
+    %ii_cum_int = NaN(length(cn_st),1);
+    mk_set = strings(height(taskset),1);
+
+    subset_cn = taskset{cn_st, ["C" "I"]};
+    for i = 1: length(cn_st)
+        ii_ltc = NaN; 
+        ii_cum_int = NaN;
+        nd = i - 1;
+        df = 1;
+        if nd == 0
+            nd = length(cn_st);
+            df = 0;
+        end
+        ii_cum_int = getcummaxint(i, nd, subset_cn, df);
+        ii_ltc = taskset{cn_st(i), "DL"} + sumC + ii_cum_int;
+        K = ceil(ii_ltc/taskset{cn_st(i), "T"});
+        %mk_set(cn_st(i)) = "(" + string(K-1) + "," + string(K) + ")";
+    end
+
+        

@@ -1,0 +1,12 @@
+function [p_ratio, n] = getsub_ratio(row_col, mtx)
+    % GETSUB_RATIO Get schdulability ratio of each specific-sized row for each column in a matrix
+    %   INPUTS: row_col : size of count window and number of chains
+    %           mtx : original matrix
+
+    out_ratio = NaN(mtx/row_col(1), row_col(2));       % schedulability ratio and non-convergence rate in each case
+    for i = 1: mtx/row_col(1)
+        s = (i - 1) * row_col(1) + 1;
+        e = i * row_col(1);
+        
+        for j = 1: row_col(2)
+            out_ratio(i, j) = sum(mtx(s:e, j) == 1);
