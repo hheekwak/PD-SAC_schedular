@@ -15,19 +15,14 @@ function R = WCRT_t2chain(sumC, latency, chainT)
     R = [zeros(n, 1), ones(n, 1)];
     schedulability = 1;
     for i = 1:n
-        if i > 1 && R(i-1, 2) == -1;      % previous chain WCRT may not have converged
+        if i > 1 && (R(i-1, 2) == -1 || R(i-1, 1) == inf)     % previous chain WCRT may not have converged
             R(i, 1) = -1;                 % rest may not be possible to be completed
             R(i, 2) = -1;
 
         else
             % Initial WCRT for a chain is its Latency
-            if i == 1               % execution time of highest chain is sum of tasks execution time
-                Ri_old = sumC(i);   % idle time is not considered for highest-priority chain
-                Ri_new = sumC(i);   
-            else 
-                Ri_old = 0;
-                Ri_new= latency(i);
-            end
+            Ri_old = 0;
+            Ri_new= latency(i);
         
             % Iteratively calculate the WCRT of the chain
             max_iterations = 1000;  % Maximum number of iterations to avoid infinite loop
@@ -47,6 +42,11 @@ function R = WCRT_t2chain(sumC, latency, chainT)
                 % Check if the response time exceeds the task's deadline
                 if Ri_new > chainT(i)
                     schedulability = 0;     % cannot meet its deadline
+                end
+                if Ri_new == inf
+                    Ri_new = -1;
+                    schedulability = -1;
+                    break;
                 end
                 iter = iter + 1;
             end

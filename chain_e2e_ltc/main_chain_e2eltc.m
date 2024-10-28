@@ -144,7 +144,7 @@ for i = 1: height(taskset)
 
     % WCRT with T of chains and C (latency or sumC) of chains
     % Type1 (with deadline miss termination) chainT from max e2e latency and T of task1
-    R_1 = WCRT_t1chain(2*sumC_cn(i,:), maxDM_cn(i,:), e2e_ltc_cn_wo_ED(i,:), T_cn_t1(i,:));
+    R_1 = WCRT_t1chain(maxDM_cn(i,:), e2e_ltc_cn_wo_ED(i,:), T_cn_t1(i,:));
     WCRT_chain_1(i,:) = R_1(:,1)';
     schd_able_1(i,:) = R_1(:,2)';
 

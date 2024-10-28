@@ -1,9 +1,7 @@
-function R = WCRT_t1chain(exeC, maxDM, latency, chainT)
+function R = WCRT_t1chain(maxDM, latency, chainT)
     % WCRT_t1chain calculates worst case respose time 
     %       in chain-scale in a taskset, with deadline miss termination
-    %   INPUTS: vector of sum of tasks' execution time of each chain at the beginning
-    %               - for every WCRT calculation, it is updated as a new execution time : exeC
-    %           vector of maximum deadline miss (=c) of tasks in each chain: maxDM
+    %   INPUTS: vector of maximum deadline miss (=c) of tasks in each chain: maxDM
     %           vector of maximum end-to-end latencis of each chain
     %               - for corresponding chain's execution time considering: latency
     %               - idle times and deadline misses are considered
@@ -12,6 +10,8 @@ function R = WCRT_t1chain(exeC, maxDM, latency, chainT)
     %           schedulability: R(:,2) 
     %           1: schedulable, 0: not schedulable, -1:RT is not converged  
 
+    % vector of execution time of each chain - for every WCRT calculation, it is updated as a new execution time
+    exeC = latency;
     n = length(exeC);      % number of chains
     R = [zeros(n, 1), ones(n, 1)];
     schedulability = 1;
