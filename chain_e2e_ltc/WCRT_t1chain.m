@@ -16,7 +16,7 @@ function R = WCRT_t1chain(maxDM, latency, chainT)
     R = [zeros(n, 1), ones(n, 1)];
     schedulability = 1;
     for i = 1:n
-        if i > 1 && (R(i-1, 2) == -1 || R(i-1, 1) == inf) % previous chain WCRT may not have converged
+        if i > 1 && R(i-1, 2) == -1       % previous chain WCRT may not have converged
             R(i, 1) = -1;                 % rest may not be possible to be completed
             R(i, 2) = -1;
 
@@ -29,7 +29,8 @@ function R = WCRT_t1chain(maxDM, latency, chainT)
             max_iterations = 1000;  % Maximum number of iterations to avoid infinite loop
             tolerance = 1e-6;       % Convergence tolerance
             iter = 0;
-        
+            added_DM = 0;
+
             while abs(Ri_new - Ri_old) > tolerance && iter < max_iterations
                 Ri_old = Ri_new;
                 interference = 0;
@@ -39,9 +40,9 @@ function R = WCRT_t1chain(maxDM, latency, chainT)
                     interference = interference + ceil(Ri_old / chainT(j)) * exeC(j); 
                     added_DM = added_DM +  ceil(Ri_old / chainT(j)) * 2 * maxDM(i); % assume every interference brings 2 deadline misses 
                 end
-                % Update WCRT and update exeC
+                % Update WCRT
                 Ri_new = latency(i) + interference + added_DM;
-                exeC(i) = latency(i) + added_DM;
+                
                 % Check if the response time exceeds the task's deadline
                 if Ri_new > chainT(i)
                     schedulability = 0;     % cannot meet its deadline
@@ -53,6 +54,8 @@ function R = WCRT_t1chain(maxDM, latency, chainT)
                 end
                 iter = iter + 1;
             end
+            % Update exeC
+            exeC(i) = latency(i) + added_DM;
 
             R(i, 1) = Ri_new;               
             R(i, 2) = schedulability;

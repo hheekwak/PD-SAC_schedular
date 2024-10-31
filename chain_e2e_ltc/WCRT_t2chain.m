@@ -15,7 +15,7 @@ function R = WCRT_t2chain(sumC, latency, chainT)
     R = [zeros(n, 1), ones(n, 1)];
     schedulability = 1;
     for i = 1:n
-        if i > 1 && (R(i-1, 2) == -1 || R(i-1, 1) == inf)     % previous chain WCRT may not have converged
+        if i > 1 && R(i-1, 2) == -1       % previous chain WCRT may not have converged
             R(i, 1) = -1;                 % rest may not be possible to be completed
             R(i, 2) = -1;
 

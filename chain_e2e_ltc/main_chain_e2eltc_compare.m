@@ -6,7 +6,7 @@ is_timing = 0;     % Process time measurement: when 1, comment out Line 147- 192
 is_compare = 0;    % Compare reaction time difference between PD-SAC ann TA-CEC 
 
 % Bring task-counts and chain-counts of each taskset as arrays 
-fileID_sz = fopen('../data/rtas2021data/102124_t_ch_each_ts_180_1000.txt', 'r');
+fileID_sz = fopen('../data/rtas2021data/102124_t_ch_each_ts_150_1000.txt', 'r');
 line = fgets(fileID_sz);                    % Read a task count line from the file as a string
 ts_t_size = eval(line);                     % Convert the string to a MATLAB array
 line = fgets(fileID_sz);                    % Read a chain count line from the file as a string
@@ -17,7 +17,7 @@ fclose(fileID_sz);                          % Close the file
 n_ts = length(ts_t_size);  
 
 % Bring chain configurations in 
-fileID = fopen('../data/rtas2021data/102124_chains_180_1000.txt', 'r');
+fileID = fopen('../data/rtas2021data/102124_chains_150_1000.txt', 'r');
 % Initialize a cell array to store the arrays
 st_ts = {};
 
@@ -44,7 +44,7 @@ end
 % also consider re-nameing names of result and figure file 
 
 % read data
-data1 = load('../data/rtas2021data/102124_taskset_180_1000.txt');
+data1 = load('../data/rtas2021data/102124_taskset_150_1000.txt');
 data1 = array2table(data1, 'VariableNames', {'T' 'C' 'D' 'ID' 'Prior'});
 
 % add ED, upperbound of potential delay from its release point to execution
@@ -137,7 +137,6 @@ for i = 1: height(taskset)
         
     end
 
-
     % WCRT with T of chains and C (latency or sumC) of chains
     % Type2 (No deadline miss termination) chainT from max e2e latency and T of task1
     R_2 = WCRT_t2chain(sumC_cn(i,:), e2e_ltc_wo_DM_ED(i,:), T_cn_t2(i,:));
@@ -191,12 +190,12 @@ for i = 1: height(taskset)
             react_t(i, j) = T_cn_t2(i, j) + WCRT_chain_2(i,j);
         end
     end 
-
+%}
 end
 % End timing
 elapsedTime = toc;
 if is_timing == 1
-    fileID_time = fopen('../output/102124_elapsedTime_180_1000.txt', 'w');
+    fileID_time = fopen('../output/d102124_elapsedTime_150_1000.txt', 'w');
     fprintf(fileID_time,'Elapsed time: %8.4f', elapsedTime);
 end
 
@@ -212,7 +211,7 @@ median_util = median(filtered_util);
 %% Compare reaction time of PDSAC scheduler and TA_CEC
 if (is_timing == 0 & is_compare == 1)
     % Bring chain configurations in 
-    fileID_cp = fopen('../data/rtas2021data/102124_reaction_t_180_1000.txt', 'r');
+    fileID_cp = fopen('../data/rtas2021data/102124_reaction_t_150_1000.txt', 'r');
     % Initialize an array to store reaction time
     ta_cec = NaN(size(react_t));
     
@@ -238,16 +237,20 @@ if (is_timing == 0 & is_compare == 1)
     diff_vector = difference(:);
     % Remove NaN values
     diff_vector = diff_vector(~isnan(diff_vector));
-    % Create the box plot
-    boxplot(diff_vector);
-    title('Box Plot of Differences Between Values (NaNs Removed)');
-    ylabel('Difference Value');
-    saveas(gcf, '102124_boxplot_difference_180_1000.png'); % Save as PNG file
+    
+    % Save difference as a file
+    writematrix(diff_vector, '../output/d102124_diff_150.txt')
+    
+    % % Create the box plot
+    % boxplot(diff_vector);
+    % title('Box Plot of Differences Between Values (NaNs Removed)');
+    % ylabel('Difference Value');
+    % saveas(gcf, 'd102724_boxplot_difference_50_1000.png'); % Save as PNG file
 end
 %% save result as txt files
 if is_timing == 0
     % For Data Analysis Comparison To RTAS 2021 Reaction time and WCRT
-    fileID = fopen('../output/102124_cn_e2eltc_compare_180_1000.txt', 'w');
+    fileID = fopen('../output/d102124_cn_e2eltc_compare_150_1000.txt', 'w');
     fprintf(fileID,'\n Count of not schedulable tasksets: %d ', count_unsch_ts);
     fprintf(fileID,'\n Mean of utilization: %8.3f ', average_util);
     fprintf(fileID,'\n Median of utilization: %8.3f ', median_util);
@@ -261,9 +264,12 @@ if is_timing == 0
         fprintf(fileID,'\r\n');
     end
     fclose(fileID);
+
+    % chain id in prioritized order
+    writecell(sorted_org_idx,'../output/d102124_prior_cn_id_150_1000.txt','Delimiter',' ');
     
     % (m,k) for each task (multi, type 2)
-    fileID_2_m = fopen('../output/102124_cn_e2eltc_compare_mk_180_1000.txt', 'w');
+    fileID_2_m = fopen('../output/d102124_cn_e2eltc_compare_mk_150_1000.txt', 'w');
     
     fprintf(fileID_2_m, '\n Indiv task (m,k) in a multi-chain model without deadline miss termination \n %6s %4s %4s %4s %8s \r\n','#set', '#chn', '#tsk', '#tid', '(m,k)');
     for i = 1:length(taskset)

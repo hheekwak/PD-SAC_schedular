@@ -4,13 +4,13 @@ clc; close all; clear;
 
 save_mk = 0;    % save (m,k) of all tasks as a file
 
-ts_size = 6; % size of a taskset (number of tasks in a taskset)
-n_ts = 1;  % number of tasksets for each case (e.g. utilization, max T position...)
+ts_size = 15; % size of a taskset (number of tasks in a taskset)
+n_ts = 1000;  % number of tasksets for each case (e.g. utilization, max T position...)
 
 % manually set chain configuration (chain structure)
-cn_st1 = [1 2]; 
-cn_st2 = [3 4];
-cn_st3 = [5 6];
+cn_st1 = [1 2 3 4 5]; 
+cn_st2 = [6 7 8 9 10];
+cn_st3 = [11 12 13 14 15];
 %cn_st4 = [10 11 12];
 %cn_st5 = [13 14 15];
 
@@ -20,7 +20,7 @@ st_ts = {cn_st1 cn_st2 cn_st3}; % cn_st4 cn_st5}; % structure of taskset e.g.{cn
 % also consider re-nameing names of result and figure file 
 
 % read data
-data1 = load('../data/chain_case15_1.txt');
+data1 = load('../data/chain_case17_1000.txt');
 data1 = array2table(data1, 'VariableNames', {'T' 'C' 'D' 'ID' 'Prior'});
 
 % add ED, upperbound of potential delay from its release point to execution
@@ -43,21 +43,26 @@ T_cn_t1 = zeros(length(taskset), length(st_ts));       % Type 1: set T of each c
 WCRT_chain_1 = NaN(length(taskset), length(st_ts));    % Type 1: WCRT with deadline miss termination 
 schd_able_1 = NaN(length(taskset), length(st_ts));     % Type 1: schedulability of each chain 
 
-
 e2e_ltc_wo_DM = NaN(length(taskset), length(st_ts));      % Type 2: end-to-end latency in a single chain, including ED, not DM 
 e2e_ltc_wo_DM_ED = NaN(length(taskset), length(st_ts));   % Type 2: end-to-end latency in a single chain, no ED, no DM considered 
 T_cn_t2 = zeros(length(taskset), length(st_ts));          % Type 2: set T of each chain with its max latency and T_1 without Deadline miss termination 
 WCRT_chain_2 = NaN(length(taskset), length(st_ts));       % Type 2: WCRT without deadline miss termination 
 schd_able_2 = NaN(length(taskset), length(st_ts));        % Type 2: schedulability of each chain 
 
-utilization = NaN(length(taskset), 2);
+utilization = NaN(length(taskset), 4);
+mean_util = NaN(length(taskset)/n_ts, 4);
+median_util = NaN(length(taskset)/n_ts, 4);
+count_unsch_ts = NaN(length(taskset)/n_ts, 4);
+
 
 %maxT_cn = zeros(length(taskset), length(st_ts));      % get max length T of each chain 
 %maxT_pos = -1 * ones(length(taskset), length(st_ts)); % to save the position of max T in chain
-%hyperperiods = zeros(length(taskset), length(st_ts));  % to save the hyperperiods of each chain
-%T_cn_h = zeros(length(taskset), length(st_ts));          % set T of each chain with its max latency and hyperperiod
-%WCRT_chain_h = NaN(length(taskset), length(st_ts));
-%schd_able_h = NaN(length(taskset), length(st_ts));       % schedulability of each chain
+hyperperiods = zeros(length(taskset), length(st_ts));  % to save the hyperperiods of each chain
+T_cn_h = zeros(length(taskset), length(st_ts));          % set T of each chain with its max latency and hyperperiod
+WCRT_chain_h1 = NaN(length(taskset), length(st_ts));     % Type1 and chainT = hyperperiod
+schd_able_h1 = NaN(length(taskset), length(st_ts));       % schedulability of each chain
+WCRT_chain_h2 = NaN(length(taskset), length(st_ts));     % Type2 and chainT = hyperperiod
+schd_able_h2 = NaN(length(taskset), length(st_ts));       % schedulability of each chain
 %TF = false(length(taskset), length(st_ts));            % check if T of chain is longer than any T in chain
 
 %% calculate
@@ -81,11 +86,12 @@ for i = 1: height(taskset)
             %end
 
             %maxT_cn(i, j) = max(maxT_cn(i, j), taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "T"});
-            % hyper periods for each chain
-            % if k == 1
-            %     hyperperiods(i, j) = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "T"};
-            % end
-            % hyperperiods(i, j) = lcm(hyperperiods(i, j), taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "T"});
+            
+            % Method 2: hyper periods for each chain
+            if k == 1
+                 hyperperiods(i, j) = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "T"};
+            end
+            hyperperiods(i, j) = lcm(hyperperiods(i, j), taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "T"});
         end    
 
         % max idle time for each task
@@ -138,7 +144,7 @@ for i = 1: height(taskset)
         T_cn_t2(i, j) = ceil(e2e_ltc_wo_DM(i, j)/cn_T1) * cn_T1;    % Type 2: without deadline miss termination
         
         % Method2 Set T(period) of each chain from tasks' hyper period
-        %T_cn_h(i, j) = ceil(e2e_ltc_cn(i, j)/hyperperiods(i, j)) * hyperperiods(i, j);
+        T_cn_h(i, j) = ceil(e2e_ltc_cn(i, j)/hyperperiods(i, j)) * hyperperiods(i, j);
        
     end
 
@@ -153,11 +159,16 @@ for i = 1: height(taskset)
     WCRT_chain_2(i,:) = R_2(:,1)';
     schd_able_2(i,:) = R_2(:,2)';
 
-    % Method2 hyper period
-    %R_h = WCRT_c_h(sumC_cn(i,:), T_cn_h(i,:));
-    %WCRT_chain_h(i,:) = R_h(:,1)';
-    %schd_able_h(i,:) = R_h(:,2)';
-    
+    % Method2 hyper period Type 1
+    R_h1 = WCRT_c_h1(maxDM_cn(i,:), sumC_cn(i,:), e2e_ltc_cn_wo_ED(i,:), T_cn_h(i,:));
+    WCRT_chain_h1(i,:) = R_h1(:,1)';
+    schd_able_h1(i,:) = R_h1(:,2)';
+
+    % Method2 hyper period Type 2
+    R_h2 = WCRT_c_h2(sumC_cn(i,:), e2e_ltc_wo_DM_ED(i,:), T_cn_h(i,:));
+    WCRT_chain_h2(i,:) = R_h2(:,1)';
+    schd_able_h2(i,:) = R_h2(:,2)';
+
     % Find lenient (m,k) of each task within each chain in multi-chain model
     for j = 1: length(st_ts) 
         % Find max(m,k) of each task with WCRT in a multi-chain model
@@ -165,27 +176,41 @@ for i = 1: height(taskset)
         taskset{i}.("mk_m_ty1_"+string(j)) = getmk_in_multi(taskset{i}, st_ts{j}, sumC_cn(i,j), WCRT_chain_1(i,j), T_cn_t1(i,j));
         % Type 2: deadline miss termination NOT considered
         taskset{i}.("mk_m_ty2_"+string(j)) = getmk_in_multi(taskset{i}, st_ts{j}, sumC_cn(i,j), WCRT_chain_2(i,j), T_cn_t2(i,j));
+        % Method2 Type 1: deadline miss termination considered
+        taskset{i}.("mk_m_ty1_h"+string(j)) = getmk_in_multi(taskset{i}, st_ts{j}, sumC_cn(i,j), WCRT_chain_h1(i,j), T_cn_h(i,j));
+        % Method2 Type 2: deadline miss termination NOT considered
+        taskset{i}.("mk_m_ty2_h"+string(j)) = getmk_in_multi(taskset{i}, st_ts{j}, sumC_cn(i,j), WCRT_chain_h2(i,j), T_cn_h(i,j));
+
     end
 
-    %% TODO: correct this utilization calculation code for type 1 and 2
     % Find the minimum utilization of taskset
     sumUtil_1 = 0;
     sumUtil_2 = 0;
+    sumUtil_h1 = 0;
+    sumUtil_h2 = 0;
     % Type 1 with lanient m,k applied
     for j = 1: length(st_ts)
         for k = 1: length(st_ts{j})
             T = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "T"};
             C = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "C"};
             K_1 = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "mk_m_ty1_"+string(j)}{1}(2);
-            K_2 = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "mk_m_ty2_"+string(j)}{1}(2);
             % min utilization is not available if it is not schedulable
-            %% TODO = only checking is needed
             if K_1 == -1
                 sumUtil_1 = -1;
                 break;
             else
                 sumUtil_1 = sumUtil_1 + ((C/T) * 1/K_1);
             end
+        end
+    end
+    
+    % Type 2 with lanient m,k applied
+    for j = 1: length(st_ts)
+        for k = 1: length(st_ts{j})
+            T = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "T"};
+            C = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "C"};
+            K_2 = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "mk_m_ty2_"+string(j)}{1}(2);
+            % min utilization is not available if it is not schedulable
             if K_2 == -1
                 sumUtil_2 = -1;
                 break;
@@ -194,9 +219,41 @@ for i = 1: height(taskset)
             end
         end
     end
+    % Type 1 hyperperiod with lanient m,k applied
+    for j = 1: length(st_ts)
+        for k = 1: length(st_ts{j})
+            T = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "T"};
+            C = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "C"};
+            K_h1 = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "mk_m_ty1_h"+string(j)}{1}(2);
+            % min utilization is not available if it is not schedulable
+            if K_h1 == -1
+                sumUtil_h1 = -1;
+                break;
+            else
+                sumUtil_h1 = sumUtil_h1 + ((C/T) * 1/K_h1);
+            end
+        end
+    end
+    % Type 2 hyperperiod with lanient m,k applied
+    for j = 1: length(st_ts)
+        for k = 1: length(st_ts{j})
+            T = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "T"};
+            C = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "C"};
+            K_h2 = taskset{i}{(taskset{i}{:,"ID"} == st_ts{j}(k)), "mk_m_ty2_h"+string(j)}{1}(2);
+            % min utilization is not available if it is not schedulable
+            if K_h2 == -1
+                sumUtil_h2 = -1;
+                break;
+            else
+                sumUtil_h2 = sumUtil_h2 + ((C/T) * 1/K_h2);
+            end
+        end
+    end
 
     utilization(i, 1) = sumUtil_1;
     utilization(i, 2) = sumUtil_2;
+    utilization(i, 3) = sumUtil_h1;
+    utilization(i, 4) = sumUtil_h2;
     
 end
 
@@ -204,8 +261,26 @@ end
 
 if n_ts ~= 1
     avg_unit = [n_ts 1];
-    out_avg_t1 = getsub_avg(avg_unit, e2e_ltc_cn); % latency with deadline miss termination
-    out_avg_t2 = getsub_avg(avg_unit, e2e_ltc_wo_DM); % latency without deadline miss termination
+
+    for u = 1: (length(taskset)/n_ts)
+        row_s = (u-1) * n_ts + 1;
+        row_e = u * n_ts;
+        for m = 1: 4
+            % sub-section for each utilization and each type or method
+            sub_util = utilization(row_s:row_e, m);
+            % Count the number of -1s in the array
+            count_unsch_ts(u, m) = sum(sub_util == -1);
+            % Filter out unschedulable taskset utilization value (-1)
+            filtered_util = sub_util(sub_util ~= -1);
+            % Calculate the average of schedulable taskset's utilization
+            mean_util(u, m) = mean(filtered_util);
+            % Find the median value of schedulable taskset's utilization
+            median_util(u, m) = median(filtered_util);
+        end
+    end 
+
+    % out_avg_t1 = getsub_avg(avg_unit, e2e_ltc_cn); % latency with deadline miss termination
+    % out_avg_t2 = getsub_avg(avg_unit, e2e_ltc_wo_DM); % latency without deadline miss termination
     %exe_avg = getsub_avg(avg_unit, sumC_cn);
     %prd_avg = getsub_avg(avg_unit, avgT_cn);
     
@@ -218,18 +293,27 @@ if n_ts ~= 1
     [p_ratio_2, n_ratio_2] = getsub_ratio(rt_unit, schd_able_2); % Type 2: without DM termination 
     d_ratio_2 = 1 - p_ratio_2 - n_ratio_2;                       % Type 2: WCRT > T_cn but converged
     
-    %[p_ratio_h, n_ratio_h] = getsub_ratio(rt_unit, schd_able_h);
-    %d_ratio_h = 1 - p_ratio_h - n_ratio_h;     % WCRT > T_cn but converged
+    [p_ratio_h1, n_ratio_h1] = getsub_ratio(rt_unit, schd_able_h1);
+    d_ratio_h1 = 1 - p_ratio_h1 - n_ratio_h1;     % WCRT > T_cn but converged
+    
+    [p_ratio_h2, n_ratio_h2] = getsub_ratio(rt_unit, schd_able_h2);
+    d_ratio_h2 = 1 - p_ratio_h2 - n_ratio_h2;     % WCRT > T_cn but converged
 end
 
 %% save result as txt files
 
 % Type 1: a multi-chain model with deadline miss termination
 
-fileID_1_m = fopen('../output/cn_e2eltc_case15_1_type1_multi.txt', 'w');
+fileID_1_m = fopen('../output/cn_e2eltc_case17_1000_type1_multi.txt', 'w');
+
+fprintf(fileID_1_m,'count of unschedulable, Mean and Median of min. util (m,k considered) per utilization \n');
+fprintf(fileID_1_m,'%8s %8s %8s \r\n', 'count', 'Mean', 'Median');
+for util = 1: length(count_unsch_ts) 
+        fprintf(fileID_1_m,'%8d %8.4f %8.4f \r\n', count_unsch_ts(util, 1), mean_util(util, 1), median_util(util, 1));
+end
 
 fprintf(fileID_1_m,'\n Ratio of chain completed per utilization \n');
-fprintf(fileID_1_m,'%8s %8s %8s %8s %8s \r\n',' cn1', 'cn2', 'cn3', 'cn4', 'cn5');
+fprintf(fileID_1_m,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
 for i = 1:length(p_ratio_1)
     for j = 1:length(st_ts)
         fprintf(fileID_1_m,'%8.4f', p_ratio_1(i,j));
@@ -238,7 +322,7 @@ for i = 1:length(p_ratio_1)
 end
 
 fprintf(fileID_1_m,'\n Ratio of chain delayed per utilization \n');
-fprintf(fileID_1_m,'%8s %8s %8s %8s %8s \r\n',' cn1', 'cn2', 'cn3', 'cn4', 'cn5');
+fprintf(fileID_1_m,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
 for i = 1:length(d_ratio_1)
     for j = 1:length(st_ts)
         fprintf(fileID_1_m,'%8.4f', d_ratio_1(i,j));
@@ -247,7 +331,7 @@ for i = 1:length(d_ratio_1)
 end
 
 fprintf(fileID_1_m,'\n Ratio of chain not-converged per utilization \n');
-fprintf(fileID_1_m,'%8s %8s %8s %8s %8s \r\n',' cn1', 'cn2', 'cn3', 'cn4', 'cn5');
+fprintf(fileID_1_m,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
 for i = 1:length(n_ratio_1)
     for j = 1:length(st_ts)
         fprintf(fileID_1_m,'%8.4f', n_ratio_1(i,j));
@@ -256,7 +340,7 @@ for i = 1:length(n_ratio_1)
 end
 
 fprintf(fileID_1_m,'\n Indiv. Chain WCRT in multi-chain model with deadline miss termination \n ');
-fprintf(fileID_1_m,'%8s %8s %8s %8s %8s \r\n','chain 1', 'chain 2', 'chain 3', 'chain 4', 'chain 5');
+fprintf(fileID_1_m,'%8s %8s %8s \r\n','chain 1', 'chain 2', 'chain 3');
 for i = 1:length(taskset)
     for j = 1:length(st_ts)
         fprintf(fileID_1_m,'%8.1f', WCRT_chain_1(i,j));
@@ -280,10 +364,16 @@ end
 fclose(fileID_1_m);
 
 % Type 2: a multi-chain model without deadline miss termination 
-fileID_2_m = fopen('../output/cn_e2eltc_case15_1_type2_multi.txt', 'w');
+fileID_2_m = fopen('../output/cn_e2eltc_case17_1000_type2_multi.txt', 'w');
+
+fprintf(fileID_2_m,'count of unschedulable, Mean and Median of min. util (m,k considered) per utilization \n');
+fprintf(fileID_2_m,'%8s %8s %8s \r\n', 'count', 'Mean', 'Median');
+for util = 1: length(count_unsch_ts) 
+        fprintf(fileID_2_m,'%8d %8.4f %8.4f \r\n', count_unsch_ts(util, 2), mean_util(util, 2), median_util(util, 2));
+end
 
 fprintf(fileID_2_m,'\n Ratio of chain completed per utilization \n');
-fprintf(fileID_2_m,'%8s %8s %8s %8s %8s \r\n',' cn1', 'cn2', 'cn3', 'cn4', 'cn5');
+fprintf(fileID_2_m,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
 for i = 1:length(p_ratio_2)
     for j = 1: length(st_ts)
     fprintf(fileID_2_m,'%8.4f', p_ratio_2(i,j));
@@ -292,7 +382,7 @@ for i = 1:length(p_ratio_2)
 end
 
 fprintf(fileID_2_m,'\n Ratio of chain delayed per utilization \n');
-fprintf(fileID_2_m,'%8s %8s %8s %8s %8s \r\n',' cn1', 'cn2', 'cn3', 'cn4', 'cn5');
+fprintf(fileID_2_m,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
 for i = 1:length(d_ratio_2)
     for j = 1: length(st_ts)
         fprintf(fileID_2_m,'%8.4f',d_ratio_2(i,j));
@@ -301,7 +391,7 @@ for i = 1:length(d_ratio_2)
 end
 
 fprintf(fileID_2_m,'\n Ratio of chain not-converged per utilization \n');
-fprintf(fileID_2_m,'%8s %8s %8s %8s %8s \r\n',' cn1', 'cn2', 'cn3', 'cn4', 'cn5');
+fprintf(fileID_2_m,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
 for i = 1:length(n_ratio_2)
     for j = 1: length(st_ts)
         fprintf(fileID_2_m,'%8.4f',n_ratio_2(i,j));
@@ -310,7 +400,7 @@ for i = 1:length(n_ratio_2)
 end
 
 fprintf(fileID_2_m,'\n Indiv. Chain WCRT in multi-chain model without deadline miss termination \n ');
-fprintf(fileID_2_m,'%8s %8s %8s %8s %8s \r\n','chain 1', 'chain 2', 'chain 3', 'chain 4', 'chain 5');
+fprintf(fileID_2_m,'%8s %8s %8s \r\n','chain 1', 'chain 2', 'chain 3');
 for i = 1:length(taskset)
     for j = 1: length(st_ts)
         fprintf(fileID_2_m,'%8.1f',WCRT_chain_2(i,j));
@@ -334,17 +424,17 @@ end
 fclose(fileID_2_m);
 
 % a single-chain model with deadline miss termination (single, type 1)
-fileID_1_s = fopen('../output/cn_e2eltc_case15_1_type1_single.txt', 'w');
+fileID_1_s = fopen('../output/cn_e2eltc_case17_1000_type1_single.txt', 'w');
 
 % Average latency per utilization (single, type 1)
-fprintf(fileID_1_s,'\n Avg. Latency per case with deadline miss termination \n');
-fprintf(fileID_1_s,'%8s %8s %8s %8s %8s \r\n','avg cn1', 'avg cn2', 'avg cn3', 'avg cn4', 'avg cn5');
-for i = 1:length(out_avg_t1)
-    for j = 1: length(st_ts)
-        fprintf(fileID_1_s,'%8.1f', out_avg_t1(i,j));
-    end
-    fprintf(fileID_1_s,'\r\n');
-end
+% fprintf(fileID_1_s,'\n Avg. Latency per case with deadline miss termination \n');
+% fprintf(fileID_1_s,'%8s %8s %8s %8s %8s \r\n','avg cn1', 'avg cn2', 'avg cn3', 'avg cn4', 'avg cn5');
+% for i = 1:length(out_avg_t1)
+%     for j = 1: length(st_ts)
+%         fprintf(fileID_1_s,'%8.1f', out_avg_t1(i,j));
+%     end
+%     fprintf(fileID_1_s,'\r\n');
+% end
 
 % Indivicual latency (single, type 1)
 fprintf(fileID_1_s,'\n Indiv. Chain Latency as single chain with deadline miss termination \n');
@@ -372,17 +462,17 @@ end
 fclose(fileID_1_s);
 
 % a single-chain model without deadline miss termination (single, type 2)
-fileID_2_s = fopen('../output/cn_e2eltc_case15_1_type2_single.txt', 'w');
+fileID_2_s = fopen('../output/cn_e2eltc_case17_1000_type2_single.txt', 'w');
 
 % Average latency per utilization (single, type 2)
-fprintf(fileID_2_s,'\n Avg. Latency per case with deadline miss termination \n');
-fprintf(fileID_2_s,'%8s %8s %8s %8s %8s \r\n','avg cn1', 'avg cn2', 'avg cn3', 'avg cn4', 'avg cn5');
-for i = 1:length(out_avg_t2)
-    for j = 1: length(st_ts)
-        fprintf(fileID_2_s,'%8.1f',out_avg_t2(i,j));
-    end
-    fprintf(fileID_2_s,'\r\n');
-end
+% fprintf(fileID_2_s,'\n Avg. Latency per case with deadline miss termination \n');
+% fprintf(fileID_2_s,'%8s %8s %8s %8s %8s \r\n','avg cn1', 'avg cn2', 'avg cn3', 'avg cn4', 'avg cn5');
+% for i = 1:length(out_avg_t2)
+%     for j = 1: length(st_ts)
+%         fprintf(fileID_2_s,'%8.1f',out_avg_t2(i,j));
+%     end
+%     fprintf(fileID_2_s,'\r\n');
+% end
 
 % Individual latency (single, type 2)
 fprintf(fileID_2_s,'\n Indiv. Chain Latency as single chain without deadline miss termination \n %8s %8s %8s %8s %8s \r\n','chain 1', 'chain 2', 'chain 3', 'chain 4', 'chain 5');
@@ -407,28 +497,63 @@ if save_mk == 1
 end
 fclose(fileID_2_s);
 
+% Mothod 2 hyperperiod type 1
+fileID_h1 = fopen('../output/cn_e2eltc_case17_1000_type1_hyp.txt', 'w');
 
-% Mothod 2 hyper period
-% fileID_h = fopen('../output/cn_e2eltc_case9_1_h.txt', 'w');
-% 
-% fprintf(fileID_h,'\n Ratio of chain completed per utilization \n');
-% fprintf(fileID_h,'%8s %8s %8s %8s %8s \r\n',' cn1', 'cn2', 'cn3', 'cn4', 'cn5');
-% for i = 1:length(p_ratio_h)
-%     fprintf(fileID_h,'%8.4f %8.4f %8.4f %8.4f %8.4f \r\n',p_ratio_h(i,:));
-% end
-% 
-% fprintf(fileID_h,'\n Ratio of chain delayed per utilization \n');
-% fprintf(fileID_h,'%8s %8s %8s %8s %8s \r\n',' cn1', 'cn2', 'cn3', 'cn4', 'cn5');
-% for i = 1:length(d_ratio_h)
-%     fprintf(fileID_h,'%8.4f %8.4f %8.4f %8.4f %8.4f \r\n',d_ratio_h(i,:));
-% end
-% 
-% fprintf(fileID_h,'\n Ratio of chain not-converged per utilization \n');
-% fprintf(fileID_h,'%8s %8s %8s %8s %8s \r\n',' cn1', 'cn2', 'cn3', 'cn4', 'cn5');
-% for i = 1:length(n_ratio_h)
-%     fprintf(fileID_h,'%8.4f %8.4f %8.4f %8.4f %8.4f \r\n',n_ratio_h(i,:));
-% end
-% fclose(fileID_h);
+fprintf(fileID_h1,'count of unschedulable, Mean and Median of min. util (m,k considered) per utilization \n');
+fprintf(fileID_h1,'%8s %8s %8s \r\n', 'count', 'Mean', 'Median');
+for util = 1: length(count_unsch_ts) 
+        fprintf(fileID_h1,'%8d %8.4f %8.4f \r\n', count_unsch_ts(util, 3), mean_util(util, 3), median_util(util, 3));
+end
+
+fprintf(fileID_h1,'\n Ratio of chain completed per utilization \n');
+fprintf(fileID_h1,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
+for i = 1:length(p_ratio_h1)
+    fprintf(fileID_h1,'%8.4f %8.4f %8.4f \r\n',p_ratio_h1(i,:));
+end
+
+fprintf(fileID_h1,'\n Ratio of chain delayed per utilization \n');
+fprintf(fileID_h1,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
+for i = 1:length(d_ratio_h1)
+    fprintf(fileID_h1,'%8.4f %8.4f %8.4f \r\n',d_ratio_h1(i,:));
+end
+
+fprintf(fileID_h1,'\n Ratio of chain not-converged per utilization \n');
+fprintf(fileID_h1,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
+for i = 1:length(n_ratio_h1)
+    fprintf(fileID_h1,'%8.4f %8.4f %8.4f \r\n',n_ratio_h1(i,:));
+end
+fclose(fileID_h1);
+
+% Mothod 2 hyperperiod type 2
+fileID_h2 = fopen('../output/cn_e2eltc_case17_1000_type2_hyp.txt', 'w');
+
+fprintf(fileID_h2,'count of unschedulable, Mean and Median of min. util (m,k considered) per utilization \n');
+fprintf(fileID_h2,'%8s %8s %8s \r\n', 'count', 'Mean', 'Median');
+for util = 1: length(count_unsch_ts) 
+        fprintf(fileID_h2,'%8d %8.4f %8.4f \r\n', count_unsch_ts(util, 4), mean_util(util, 4), median_util(util, 4));
+end
+
+fprintf(fileID_h2,'\n Ratio of chain completed per utilization \n');
+fprintf(fileID_h2,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
+for i = 1:length(p_ratio_h2)
+    fprintf(fileID_h2,'%8.4f %8.4f %8.4f \r\n',p_ratio_h2(i,:));
+end
+
+fprintf(fileID_h2,'\n Ratio of chain delayed per utilization \n');
+fprintf(fileID_h2,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
+for i = 1:length(d_ratio_h2)
+    fprintf(fileID_h2,'%8.4f %8.4f %8.4f \r\n',d_ratio_h2(i,:));
+end
+
+fprintf(fileID_h2,'\n Ratio of chain not-converged per utilization \n');
+fprintf(fileID_h2,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
+for i = 1:length(n_ratio_h2)
+    fprintf(fileID_h2,'%8.4f %8.4f %8.4f \r\n',n_ratio_h2(i,:));
+end
+fclose(fileID_h2);
+
+
 
 
 % sum of execution time of each chain

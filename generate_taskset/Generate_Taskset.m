@@ -35,8 +35,10 @@ function [ sets, util_M, util_m, valid ] = Generate_Taskset(num, t_range, k_rang
     M = randi([1 9], 1, 1);
     for i = 1 : num
         sets(i, 2) = round(util_per(i)*sets(i, 1),3); 
-        if sets(i, 2) == 0
-            disp('Not correct generation:');
+        if sets(i, 2) < 0.001
+            valid = false;      % if execution time is 0, it is not valid
+            break;
+%           disp('Not correct generation:');
         end
         if mode == 0
             sets(i, 5) = randi(k_range, 1, 1);
