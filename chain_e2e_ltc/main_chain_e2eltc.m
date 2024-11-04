@@ -523,6 +523,16 @@ fprintf(fileID_h1,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
 for i = 1:length(n_ratio_h1)
     fprintf(fileID_h1,'%8.4f %8.4f %8.4f \r\n',n_ratio_h1(i,:));
 end
+
+fprintf(fileID_h1,'\n Indiv. Chain WCRT in multi-chain model with hyperperiod and deadline miss termination \n ');
+fprintf(fileID_h1,'%8s %8s %8s \r\n','chain 1', 'chain 2', 'chain 3');
+for i = 1:length(taskset)
+    for j = 1: length(st_ts)
+        fprintf(fileID_h1,'%8.1f',WCRT_chain_h1(i,j));
+    end
+    fprintf(fileID_h1,'\r\n');
+end
+
 fclose(fileID_h1);
 
 % Mothod 2 hyperperiod type 2
@@ -551,6 +561,16 @@ fprintf(fileID_h2,'%8s %8s %8s \r\n',' cn1', 'cn2', 'cn3');
 for i = 1:length(n_ratio_h2)
     fprintf(fileID_h2,'%8.4f %8.4f %8.4f \r\n',n_ratio_h2(i,:));
 end
+
+fprintf(fileID_h2,'\n Indiv. Chain WCRT in multi-chain model with hyperperiod, without deadline miss termination \n ');
+fprintf(fileID_h2,'%8s %8s %8s \r\n','chain 1', 'chain 2', 'chain 3');
+for i = 1:length(taskset)
+    for j = 1: length(st_ts)
+        fprintf(fileID_h2,'%8.1f',WCRT_chain_h2(i,j));
+    end
+    fprintf(fileID_h2,'\r\n');
+end
+
 fclose(fileID_h2);
 
 
