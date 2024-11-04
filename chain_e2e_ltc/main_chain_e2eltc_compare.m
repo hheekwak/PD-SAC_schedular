@@ -38,7 +38,7 @@ for set = 1: n_ts
     st_ts{set, chn} = cn_st;
     end
 end
-
+fclose(fileID);                          % Close the file
 
 %% data read
 % also consider re-nameing names of result and figure file 
@@ -197,6 +197,7 @@ elapsedTime = toc;
 if is_timing == 1
     fileID_time = fopen('../output/d102124_elapsedTime_150_1000.txt', 'w');
     fprintf(fileID_time,'Elapsed time: %8.4f', elapsedTime);
+    fclose(fileID_time);                          % Close the file
 end
 
 % Count the number of -1s in the array
@@ -230,6 +231,7 @@ if (is_timing == 0 & is_compare == 1)
         end
         ta_cec(set, 1:ts_ch_size(set)) = array(sorted_org_idx{set});
     end
+    fclose(fileID_cp);                          % Close the file
     
     % Calculate the difference between corresponding reaction times
     difference = react_t - ta_cec;
