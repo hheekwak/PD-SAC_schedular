@@ -58,7 +58,8 @@ count_unsch_ts = NaN(length(taskset)/n_ts, 4);
 %maxT_cn = zeros(length(taskset), length(st_ts));      % get max length T of each chain 
 %maxT_pos = -1 * ones(length(taskset), length(st_ts)); % to save the position of max T in chain
 hyperperiods = zeros(length(taskset), length(st_ts));  % to save the hyperperiods of each chain
-T_cn_h = zeros(length(taskset), length(st_ts));          % set T of each chain with its max latency and hyperperiod
+T_cn_h1 = zeros(length(taskset), length(st_ts));          % set T of each chain with its type1 max latency and hyperperiod
+T_cn_h2 = zeros(length(taskset), length(st_ts));          % set T of each chain with its type2 max latency and hyperperiod
 WCRT_chain_h1 = NaN(length(taskset), length(st_ts));     % Type1 and chainT = hyperperiod
 schd_able_h1 = NaN(length(taskset), length(st_ts));       % schedulability of each chain
 WCRT_chain_h2 = NaN(length(taskset), length(st_ts));     % Type2 and chainT = hyperperiod
@@ -144,7 +145,8 @@ for i = 1: height(taskset)
         T_cn_t2(i, j) = ceil(e2e_ltc_wo_DM(i, j)/cn_T1) * cn_T1;    % Type 2: without deadline miss termination
         
         % Method2 Set T(period) of each chain from tasks' hyper period
-        T_cn_h(i, j) = ceil(e2e_ltc_cn(i, j)/hyperperiods(i, j)) * hyperperiods(i, j);
+        T_cn_h1(i, j) = ceil(e2e_ltc_cn(i, j)/hyperperiods(i, j)) * hyperperiods(i, j);
+        T_cn_h2(i, j) = ceil(e2e_ltc_wo_DM(i, j)/hyperperiods(i, j)) * hyperperiods(i, j);
        
     end
 
@@ -160,12 +162,12 @@ for i = 1: height(taskset)
     schd_able_2(i,:) = R_2(:,2)';
 
     % Method2 hyper period Type 1
-    R_h1 = WCRT_c_h1(maxDM_cn(i,:), sumC_cn(i,:), e2e_ltc_cn_wo_ED(i,:), T_cn_h(i,:));
+    R_h1 = WCRT_c_h1(maxDM_cn(i,:), sumC_cn(i,:), e2e_ltc_cn_wo_ED(i,:), T_cn_h1(i,:));
     WCRT_chain_h1(i,:) = R_h1(:,1)';
     schd_able_h1(i,:) = R_h1(:,2)';
 
     % Method2 hyper period Type 2
-    R_h2 = WCRT_c_h2(sumC_cn(i,:), e2e_ltc_wo_DM_ED(i,:), T_cn_h(i,:));
+    R_h2 = WCRT_c_h2(sumC_cn(i,:), e2e_ltc_wo_DM_ED(i,:), T_cn_h2(i,:));
     WCRT_chain_h2(i,:) = R_h2(:,1)';
     schd_able_h2(i,:) = R_h2(:,2)';
 
@@ -177,9 +179,9 @@ for i = 1: height(taskset)
         % Type 2: deadline miss termination NOT considered
         taskset{i}.("mk_m_ty2_"+string(j)) = getmk_in_multi(taskset{i}, st_ts{j}, sumC_cn(i,j), WCRT_chain_2(i,j), T_cn_t2(i,j));
         % Method2 Type 1: deadline miss termination considered
-        taskset{i}.("mk_m_ty1_h"+string(j)) = getmk_in_multi(taskset{i}, st_ts{j}, sumC_cn(i,j), WCRT_chain_h1(i,j), T_cn_h(i,j));
+        taskset{i}.("mk_m_ty1_h"+string(j)) = getmk_in_multi(taskset{i}, st_ts{j}, sumC_cn(i,j), WCRT_chain_h1(i,j), T_cn_h1(i,j));
         % Method2 Type 2: deadline miss termination NOT considered
-        taskset{i}.("mk_m_ty2_h"+string(j)) = getmk_in_multi(taskset{i}, st_ts{j}, sumC_cn(i,j), WCRT_chain_h2(i,j), T_cn_h(i,j));
+        taskset{i}.("mk_m_ty2_h"+string(j)) = getmk_in_multi(taskset{i}, st_ts{j}, sumC_cn(i,j), WCRT_chain_h2(i,j), T_cn_h2(i,j));
 
     end
 
