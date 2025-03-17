@@ -65,7 +65,7 @@ e2e_ltc_wo_DM = NaN(length(taskset), max(ts_ch_size));      % Type 2: end-to-end
 e2e_ltc_wo_DM_ED = NaN(length(taskset), max(ts_ch_size));   % Type 2: end-to-end latency in a single chain, no ED, no DM considered 
 T_cn_t2 = zeros(length(taskset), max(ts_ch_size));          % Type 2: set T of each chain with its max latency and T_1 without Deadline miss termination 
 WCRT_chain_2 = NaN(length(taskset), max(ts_ch_size));       % Type 2: WCRT without deadline miss termination 
-%schd_able_2 = NaN(length(taskset), max(ts_ch_size));        % Type 2: schedulability of each chain 
+%schd_able_2 = NaN(length(taskset), max(ts_ch_size));       % Type 2: schedulability of each chain 
 
 react_t = NaN(length(taskset), max(ts_ch_size));            % Type 2: without deadline miss termination 
 utilization = NaN(1, length(ts_t_size));                    % Type 2: minimum utilization for each taskset
