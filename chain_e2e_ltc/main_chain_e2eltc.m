@@ -206,7 +206,6 @@ for i = 1: height(taskset)
 
     % Method2 hyper period Type 2
     if common_task ==1
-    %% TODO
         R_h2 = WCRT_c_h2_common_task(sumC_cn(i,:), e2e_ltc_wo_DM_ED(i,:), T_cn_h2(i,:), hp_block_time, lp_block_time);
     else
         R_h2 = WCRT_c_h2(sumC_cn(i,:), e2e_ltc_wo_DM_ED(i,:), T_cn_h2(i,:));

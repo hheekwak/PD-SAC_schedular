@@ -55,7 +55,7 @@ function R = WCRT_c_h2_common_task(sumC, latency, chainT, hp_block_time, lp_bloc
             if schedulability == 1
                 % Initial WCRT for a chain is its sumC
                 Ri_old = 0;
-                Ri_new = sumC(i);
+                Ri_new = sumC(i) + lp_block_time(i);
         
                 % Iteratively calculate the WCRT of the chain
                 iter = 0;
