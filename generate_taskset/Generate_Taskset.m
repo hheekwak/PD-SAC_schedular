@@ -2,12 +2,11 @@ function [ sets, util_M, util_m, valid ] = Generate_Taskset(num, t_range, k_rang
     % mode (1) : apply same (m, k) constraints for all tasks
     % mode (-1): apply hard real-time (m,k)=(0,1) constraints for all tasks
     % check if t_range is range to open pick(1) or array of specific numbers(2)
-
     
     % T / C / D / m / k / offset / sporadic / jitter
     sets = zeros(num, 5);
     
-%     T = (t_range(2)-t_range(1)).*round(rand([1 num]), 1)+t_range(1);
+%    T = (t_range(2)-t_range(1)).*round(rand([1 num]), 1)+t_range(1);
 %    T = randi(t_range, num, 1); % t_range pick is open from the range (1)
      T = randsample(t_range, num, true); % t_range pick from given numners(2) 
 
